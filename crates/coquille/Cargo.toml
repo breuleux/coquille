@@ -1,0 +1,30 @@
+[package]
+name = "coquille"
+version.workspace = true
+edition.workspace = true
+description = "A shell for the Buche terminal"
+
+[[bin]]
+name = "cq"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+base64 = "0.22"
+brush-parser = "0.4"
+chrono = { version = "0.4", default-features = false, features = ["clock"] }
+clap = { version = "4", features = ["derive"] }
+glob = "0.3"
+hex = "0.4"
+indexmap = "2"
+hmac = "0.12"
+libc = "0.2"
+md-5 = "0.10"
+nix = { version = "0.30", features = ["term", "process", "signal", "fs", "ioctl", "hostname", "user"] }
+rand = "0.9"
+regex = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
+serde_norway = "0.9"
+sha2 = "0.10"
+tokio = { version = "1", features = ["rt", "macros", "sync", "time", "io-util", "io-std", "net", "process", "fs"] }
+uuid = { version = "1", features = ["v4"] }

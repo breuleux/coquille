@@ -1,0 +1,108 @@
+<style>
+  .cq-requests { font-family: sans-serif; padding: 0.4em 0.75em 0.5em; outline: none; }
+  .cq-requests ul.cq-list { list-style: none; margin: 0; padding: 0; }
+  .cq-requests li.cq-request { padding: 0.35em 0.5em; border-left: 3px solid transparent; cursor: pointer; }
+  .cq-requests li.cq-request.cq-selected { border-left-color: orange; background: rgba(255, 165, 0, 0.08); }
+  .cq-requests .cq-title { font-weight: bold; }
+  .cq-requests ul.cq-details { margin: 0.2em 0 0.4em; padding-left: 1.2em; font-size: 0.9em; }
+  .cq-requests ul.cq-details li { font-family: monospace; }
+  .cq-requests button { margin-right: 0.5em; padding: 0.15em 0.8em; cursor: pointer; }
+  .cq-requests .cq-empty, .cq-requests .cq-help { opacity: 0.6; font-size: 0.85em; margin: 0.3em 0 0; }
+</style>
+<div class="cq-requests" id="prime-focus" tabindex="0" autofocus>
+  <ul class="cq-list"></ul>
+  <p class="cq-empty" hidden>No pending requests.</p>
+  <p class="cq-help">↑↓ select · Enter/a approve · i ignore · Esc close</p>
+</div>
+<script>
+  (() => {
+    const root = document.querySelector(".cq-requests");
+    const list = root.querySelector(".cq-list");
+    const empty = root.querySelector(".cq-empty");
+    let requests = [];
+    let selected = 0;
+
+    const answer = (index, answer) => {
+      const request = requests[index];
+      if (request) buche({ request: request.id, answer });
+    };
+
+    const draw = () => {
+      empty.hidden = requests.length > 0;
+      list.replaceChildren(
+        ...requests.map((request, index) => {
+          const item = document.createElement("li");
+          item.className = "cq-request" + (index === selected ? " cq-selected" : "");
+          const title = document.createElement("div");
+          title.className = "cq-title";
+          title.textContent = request.title;
+          const details = document.createElement("ul");
+          details.className = "cq-details";
+          for (const line of request.details) {
+            const li = document.createElement("li");
+            li.textContent = line;
+            details.append(li);
+          }
+          const button = (label, what) => {
+            const b = document.createElement("button");
+            b.textContent = label;
+            b.tabIndex = -1;
+            b.onclick = (e) => {
+              e.stopPropagation();
+              answer(index, what);
+            };
+            return b;
+          };
+          item.append(title, details, button(request.approve, "approve"), button(request.ignore, "ignore"));
+          item.onclick = () => {
+            selected = index;
+            draw();
+            root.focus();
+          };
+          return item;
+        }),
+      );
+      list.children[selected]?.scrollIntoView({ block: "nearest" });
+    };
+
+    window.cqRender = (next) => {
+      // Keep the selection on the same request if it is still there.
+      const current = requests[selected]?.id;
+      requests = next;
+      const kept = requests.findIndex((r) => r.id === current);
+      selected = kept >= 0 ? kept : Math.min(selected, Math.max(0, requests.length - 1));
+      draw();
+    };
+
+    root.addEventListener("keydown", (e) => {
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
+      switch (e.key) {
+        case "ArrowDown":
+        case "j":
+          selected = Math.min(selected + 1, requests.length - 1);
+          draw();
+          break;
+        case "ArrowUp":
+        case "k":
+          selected = Math.max(selected - 1, 0);
+          draw();
+          break;
+        case "Enter":
+        case "a":
+          answer(selected, "approve");
+          break;
+        case "i":
+        case "Delete":
+        case "Backspace":
+          answer(selected, "ignore");
+          break;
+        case "Escape":
+          buche({ dismiss: true });
+          break;
+        default:
+          return;
+      }
+      e.preventDefault();
+    });
+  })();
+</script>

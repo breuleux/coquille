@@ -1,0 +1,123 @@
+# coquille's default configuration: the lowest-priority config file. The
+# global config (~/.config/cq/config.yaml) and the .cq.yaml files from the
+# working directory up override it, key by key.
+#
+# A .cq.yaml (and what it sources, and the scripts its source-env runs) is
+# only used once you trust it with what it holds, as direnv does .envrc
+# files: until then it is left out, and the prompt says the configuration
+# needs your trust (Alt+a to answer). Changed, it needs your trust again
+# (approving its reload gives it). Trusted contents are remembered in
+# ~/.local/share/cq/trusted.json. The global config is always trusted.
+
+prompt:
+  # The prompt's variables, and its text: a list of parts, each one of
+  #   "text"                         an unstyled text
+  #   {text: "text", style: <accent>, action: <action>}
+  #                                  a styled text (style and action optional;
+  #                                  a click on the part fires its action: see
+  #                                  bindings below)
+  #   {spacer: grow}                 blank space pushing what follows to the
+  #                                  right
+  #   {group: [parts], style: <accent>, action: <action>}
+  #                                  parts taken together: shown only if none
+  #                                  of their substitutions comes out empty
+  #                                  (a group in it that hides doesn't hide
+  #                                  it),
+  #                                  styled together (the group's style under
+  #                                  each part's own) and clicked as one
+  #                                  (style and action optional)
+  # In variables, texts and styles (groups' included):
+  #   $NAME, ${NAME}   a variable: HOSTNAME (the host's name, short), PWD (the
+  #                    working directory), the prompt's vars (below), else the
+  #                    shell's variables and the environment
+  #   ${NAME|f|...}    the same, through filters, in turn:
+  #                      hue     an accent picked from it (H0 to H359)
+  #                      tilde   a path with your home directory as ~
+  #                      short   a path, shortened: ~, and its last two
+  #                              directories
+  #   $$               a dollar sign
+  # Nothing is run: the prompt shows variables, and changes as soon as one of
+  # them does (to show, say, the git branch, have a daemon set one:
+  # $VCS_HEAD, below, is vcs-watch's).
+  # In actions, the variables are expanded.
+  #
+  # vars: the prompt's own variables, in order (each can use those before
+  # it); COLOR is its accent (its echoes' colour). The files of the
+  # configuration add to them, or redefine them, one by one.
+  vars:
+    COLOR: ${HOSTNAME|hue}
+  parts:
+    - {text: $HOSTNAME, style: $COLOR}
+    - {text: " ⬥ ", style: $COLOR}
+    - {text: "${PWD|short}", style: grey L100, action: "@pop ls"}
+    - group:
+        - {text: " ⬥ ", style: $COLOR}
+        - {text: $VCS_HEAD, style: bold}
+
+bindings:
+  # A binding is an action (the same as a clickable part of the prompt's
+  # context has, in buche's protocol), or null:
+  #   "command line"               run it (like typing it, but the prompt and
+  #                                the history are left alone; "@zone command"
+  #                                shows it in that zone, as typed)
+  #   {command: "command line"}    the same
+  #   {builtin: <action>}          a built-in prompt action, one of:
+  #                                submit, run, previous, next, complete, close,
+  #                                requests (show the pending requests)
+  #   null                         unbind the key
+  # Add `freeze: true|false` to an object form to set whether it freezes the
+  # prompt while it is handled (by default, only submit and close do).
+  # `Previous` and `Next` are bare ArrowUp on the first line and ArrowDown on
+  # the last line of the prompt.
+  # Any chord can be bound, Alt ones included, except Alt+q (buche's
+  # navigation mode).
+  Enter: {builtin: submit}
+  Previous: {builtin: previous}
+  Next: {builtin: next}
+  Tab: {builtin: complete}
+  Ctrl+d: {builtin: close}
+  Alt+a: {builtin: requests}
+
+history:
+  # How many commands the history file (~/.config/cq/history.jsonl) keeps: the
+  # oldest go as new ones come. Only read from the global configuration
+  # (~/.config/cq/config.yaml): every directory's shell shares the file.
+  size: 10000
+
+# control-commands:
+#   The programs that may address the shell (["$shell"], on their fd 5): to
+#   submit commands, change the prompt, start daemons... Any other
+#   program may only switch its own stdout's mode (stdout_mode). A list of
+#   {path, hash}: the file's full path (~/ is your home directory), and its
+#   SHA-256 (shasum -a 256 FILE, in quotes), or null to take it whatever it
+#   holds (a program of your own, that you change often): `hash` must be
+#   given. A process gets the privilege when this shell runs
+#   it from that file (found in PATH or not, symlinks followed): typed, bound
+#   to a key, or as a daemon (`daemons`); what it starts in turn
+#   gets none, unless it relays their messages on its own channel (whatever
+#   speaks on it speaks as it). Only read from the global configuration
+#   (~/.config/cq/config.yaml). E.g.
+#
+#     control-commands:
+#       - {path: ~/bin/sel, hash: null}
+#       - path: /usr/local/bin/picker
+#         hash: "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+
+# daemons:
+#   Processes run along with the shell, by name: a command line each. They
+#   start when a configuration declaring them is loaded, and stop when it no
+#   longer does (or when it changes them). On their fd 5 they are told what
+#   the shell does: {"type": "cwd_changed", "cwd"}, {"type": "env_changed",
+#   "name", "value"}, and for each command it runs (a cell's: a program, a
+#   builtin, or a pipeline, whose stages `commands` lists, each [command,
+#   ...arguments]) {"type": "command_started", "process_id", "commands",
+#   "cwd"}, then {"type": "command_ended", "process_id", "outcome": {"type":
+#   "success"|"error", "code"}}. To act on the
+#   shell (to set a variable for the prompt, say: {"type": "set", "to":
+#   ["$shell"], "name", "value", "export": false}), a daemon must also be one
+#   of the control-commands. The `daemon` builtin manages them by hand:
+#   daemon set NAME [-tMS] COMMAND... (-t: restart MS milliseconds after it
+#   ends), daemon enable NAME, daemon disable NAME. E.g.
+#
+#     daemons:
+#       vcs: ~/bin/vcs-watch --interval 5 jj git

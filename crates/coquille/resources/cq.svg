@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- editu-state {"size":64,"selected":null,"shapes":[{"id":"u-1","type":"u","cx":22,"cy":32,"w":28,"h":28,"rot":90,"flip":false,"curved":false,"stroke":"#7d7be5","sw":14,"cap":"butt","join":"round"},{"id":"caret-1","type":"caret","cx":49,"cy":32,"w":48,"h":14,"rot":90,"flip":false,"curved":false,"stroke":"#ababab","sw":12,"cap":"butt","join":"miter"}]} -->
+  <path d="M -14 -14 L -14 0 A 14 14 0 0 0 14 0 L 14 -14" stroke="#7d7be5" stroke-width="14" stroke-linecap="butt" transform="translate(22 32) rotate(90)"/>
+  <path d="M -24 7 L 0 -7 L 24 7" stroke="#ababab" stroke-width="12" stroke-linecap="butt" stroke-linejoin="miter" transform="translate(49 32) rotate(90)"/>
+</svg>
