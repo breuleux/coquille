@@ -8,3 +8,7 @@ version = "0.1.0"
 
 [profile.release]
 strip = true
+# Link-time optimization over the whole program, in a single codegen unit:
+# faster (and smaller) executables, slower release builds.
+lto = true
+codegen-units = 1
