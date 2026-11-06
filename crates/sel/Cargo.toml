@@ -1,0 +1,11 @@
+[package]
+name = "sel"
+version.workspace = true
+edition.workspace = true
+description = "Run a picker on the prompt's selection, and put its output back into the prompt"
+
+[dependencies]
+clap = { version = "4", features = ["derive"] }
+libc = "0.2"
+serde_json = { version = "1", features = ["preserve_order"] }
+shlex = "1"
