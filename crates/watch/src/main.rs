@@ -5,6 +5,7 @@
 //!   watch python plot.py            # watches plot.py (the arguments that exist)
 //!   watch -f src -f data make demo  # watches src and data
 //!   watch --restart --cooldown 2 --throttle 5 ./server   # keep it up, gently
+//!   watch --every 60 make check     # run it every minute, files or not
 //!
 //! When it runs again:
 //!  - after the watched files change, and have stayed unchanged for
@@ -12,6 +13,10 @@
 //!  - with --restart, after it ended on its own (or crashed): --cooldown
 //!    seconds later;
 //!  - either way, never less than --throttle seconds after it last started.
+//!
+//! --every N is --restart --throttle N: it runs again every N seconds, whether
+//! or not anything changed. With --restart (so with --every too) it needs no
+//! files to watch; give some with -f to have both.
 //!
 //! Its cells are reset just before it starts again: until then, they show
 //! how its last run ended.
@@ -33,11 +38,12 @@ use notify::{EventKind, RecursiveMode, Watcher};
 #[command(name = "watch", about = "Run a command, and run it again whenever the files it uses change")]
 struct Cli {
     /// Files (or directories) to watch; by default, the command's arguments
-    /// that are existing paths
+    /// that are existing paths. Not needed with --restart
     #[arg(short, long = "files", value_name = "FILE")]
     files: Vec<PathBuf>,
 
-    /// Also run it again after it ends on its own, or crashes
+    /// Also run it again after it ends on its own, or crashes; no files to
+    /// watch are needed
     #[arg(long)]
     restart: bool,
 
@@ -51,8 +57,13 @@ struct Cli {
     cooldown: Duration,
 
     /// Never start it less than this many seconds after its previous start
-    #[arg(long, value_name = "SECONDS", default_value = "0", value_parser = seconds)]
-    throttle: Duration,
+    #[arg(long, value_name = "SECONDS", value_parser = seconds)]
+    throttle: Option<Duration>,
+
+    /// Like --restart --throttle: run it again every this many seconds, the
+    /// files having changed or not
+    #[arg(long, value_name = "SECONDS", value_parser = seconds)]
+    every: Option<Duration>,
 
     /// The command to run
     #[arg(required = true, trailing_var_arg = true, allow_hyphen_values = true, value_name = "COMMAND")]
@@ -90,14 +101,20 @@ fn main() {
     }
 }
 
-fn watch(cli: Cli) -> Result<()> {
+fn watch(mut cli: Cli) -> Result<()> {
+    // --every N is --restart --throttle N (an explicit --throttle still wins).
+    if cli.every.is_some() {
+        cli.restart = true;
+    }
+    let throttle = cli.throttle.or(cli.every).unwrap_or_default();
+
     let files: Vec<PathBuf> = if cli.files.is_empty() {
         cli.prog.iter().map(PathBuf::from).filter(|p| p.exists()).collect()
     } else {
         cli.files.clone()
     };
-    if files.is_empty() {
-        bail!("nothing to watch: give files with -f, or name existing files in the command");
+    if files.is_empty() && !cli.restart {
+        bail!("nothing to watch: give files with -f, or name existing files in the command (--restart and --every need none)");
     }
 
     let (tx, rx) = mpsc::channel::<notify::Result<notify::Event>>();
@@ -116,8 +133,10 @@ fn watch(cli: Cli) -> Result<()> {
     loop {
         // Wait for a change, or until the next thing to do (or to check on
         // the command, while it runs).
-        let start_at = restart_at.map(|at| at.max(last_start + cli.throttle));
+        let start_at = restart_at.map(|at| at.max(last_start + throttle));
         let next = [quiet_at, start_at, child.as_ref().map(|_| Instant::now() + POLL)].into_iter().flatten().min();
+        // (Never busy-wait for a moment less than a poll away.)
+        let next = next.map(|at| at.max(Instant::now() + POLL));
         let event = match next {
             Some(at) => rx.recv_timeout(at.saturating_duration_since(Instant::now())),
             None => rx.recv().map_err(|_| RecvTimeoutError::Disconnected),
@@ -154,14 +173,23 @@ fn watch(cli: Cli) -> Result<()> {
         }
 
         if let Some(at) = restart_at
-            && now >= at.max(last_start + cli.throttle)
+            && now >= at.max(last_start + throttle)
         {
             restart_at = None;
             reset();
             last_start = Instant::now();
-            // (A command that can't be started now may be after the next
-            // change; it isn't retried before, even with --restart.)
-            child = run(&cli.prog).map_err(|err| eprintln!("watch: {err:#}")).ok();
+            match run(&cli.prog) {
+                Ok(proc) => child = Some(proc),
+                Err(err) => {
+                    eprintln!("watch: {err:#}");
+                    // It never started: take it as a run that ended at once,
+                    // so --restart tries it again after the cooldown (without
+                    // it, there is nothing to do before the next change).
+                    if cli.restart {
+                        restart_at = Some(last_start + cli.cooldown);
+                    }
+                }
+            }
         }
     }
 }
