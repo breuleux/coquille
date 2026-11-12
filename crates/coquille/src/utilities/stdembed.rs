@@ -55,10 +55,14 @@ extern "C" fn winch_handler(sig: c_int) {
 }
 
 unsafe fn set_sigaction(sig: c_int, h: extern "C" fn(c_int)) {
-    let mut sa: libc::sigaction = MaybeUninit::zeroed().assume_init();
-    sa.sa_sigaction = h as libc::sighandler_t;
-    sa.sa_flags = 0;
-    libc::sigaction(sig, &sa, ptr::null_mut());
+    // SAFETY: zero is a valid bit pattern for sigaction (all fields are ints,
+    // flags, or a null function pointer), and sig/h are valid signals/handlers.
+    unsafe {
+        let mut sa: libc::sigaction = MaybeUninit::zeroed().assume_init();
+        sa.sa_sigaction = h as libc::sighandler_t;
+        sa.sa_flags = 0;
+        libc::sigaction(sig, &sa, ptr::null_mut());
+    }
 }
 
 fn die_errno(what: &str) -> ! {

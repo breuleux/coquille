@@ -4,11 +4,25 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "A shell for the Buche terminal"
+description = "A shell for the Buche terminal, with the sel, watch, and stdembed companion tools"
 
+# The shell itself. The companion tools live in src/utilities/ and are built
+# as separate binaries, but shipped in the same package (and the same archive).
 [[bin]]
 name = "cq"
 path = "src/main.rs"
+
+[[bin]]
+name = "sel"
+path = "src/utilities/sel.rs"
+
+[[bin]]
+name = "stdembed"
+path = "src/utilities/stdembed.rs"
+
+[[bin]]
+name = "watch"
+path = "src/utilities/watch.rs"
 
 [dependencies]
 anyhow = "1"
@@ -23,10 +37,14 @@ hmac = "0.12"
 libc = "0.2"
 md-5 = "0.10"
 nix = { version = "0.30", features = ["term", "process", "signal", "fs", "ioctl", "hostname", "user"] }
+# watch
+notify = "8"
 rand = "0.9"
 regex = "1"
 serde_json = { version = "1", features = ["preserve_order"] }
 serde_norway = "0.9"
 sha2 = "0.10"
+# sel
+shlex = "1"
 tokio = { version = "1", features = ["rt", "macros", "sync", "time", "io-util", "io-std", "net", "process", "fs"] }
 uuid = { version = "1", features = ["v4"] }
