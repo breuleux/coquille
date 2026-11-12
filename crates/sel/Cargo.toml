@@ -3,6 +3,7 @@ name = "sel"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Run a picker on the prompt's selection, and put its output back into the prompt"
 
 [dependencies]

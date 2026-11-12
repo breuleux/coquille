@@ -6,6 +6,7 @@ members = ["crates/*"]
 edition = "2024"
 version = "0.1.0"
 license = "MIT"
+repository = "https://github.com/breuleux/coquille"
 
 [profile.release]
 strip = true
@@ -13,3 +14,9 @@ strip = true
 # faster (and smaller) executables, slower release builds.
 lto = true
 codegen-units = 1
+
+# The profile that 'dist' will build with
+[profile.dist]
+# Full release build: keep the fat LTO / single-codegen tuning above,
+# since these binaries are what we ship.
+inherits = "release"

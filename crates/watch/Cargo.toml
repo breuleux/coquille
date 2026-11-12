@@ -3,6 +3,7 @@ name = "watch"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "Run a command, and run it again (its cells reset) whenever the files it uses change"
 
 [dependencies]

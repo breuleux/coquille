@@ -3,6 +3,7 @@ name = "coquille"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
 description = "A shell for the Buche terminal"
 
 [[bin]]
