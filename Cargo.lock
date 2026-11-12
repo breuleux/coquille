@@ -315,7 +315,7 @@ dependencies = [
 
 [[package]]
 name = "coquille"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "base64",
@@ -1137,7 +1137,7 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "sel"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "clap",
  "libc",
@@ -1278,7 +1278,7 @@ dependencies = [
 
 [[package]]
 name = "stdembed"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "libc",
 ]
@@ -1535,7 +1535,7 @@ dependencies = [
 
 [[package]]
 name = "watch"
-version = "0.1.0"
+version = "0.0.1"
 dependencies = [
  "anyhow",
  "clap",
