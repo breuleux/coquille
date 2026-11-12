@@ -3,7 +3,7 @@ use std::env;
 use std::ffi::{CString, OsString};
 use std::io::Error;
 use std::mem::MaybeUninit;
-use std::os::raw::{c_char, c_int, c_ulong, c_void};
+use std::os::raw::{c_char, c_int, c_void};
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::os::unix::io::RawFd;
 use std::process::exit;
@@ -696,7 +696,8 @@ fn run_unwrap_pty(cmd: &[OsString]) -> ! {
     if pid == 0 {
         close_fd(master);
         unsafe { libc::setsid() };
-        unsafe { libc::ioctl(slave, libc::TIOCSCTTY as c_ulong, 0) };
+        // `as _` because ioctl's request is c_ulong on macOS but c_int on Linux.
+        unsafe { libc::ioctl(slave, libc::TIOCSCTTY as _, 0) };
         let mut map: BTreeMap<RawFd, RawFd> = BTreeMap::new();
         map.insert(0 as RawFd, slave);
         map.insert(1 as RawFd, slave);
@@ -859,7 +860,8 @@ fn run_wrap_pty(
         close_fd(master);
         close_fd(local5);
         unsafe { libc::setsid() };
-        unsafe { libc::ioctl(slave, libc::TIOCSCTTY as c_ulong, 0) };
+        // `as _` because ioctl's request is c_ulong on macOS but c_int on Linux.
+        unsafe { libc::ioctl(slave, libc::TIOCSCTTY as _, 0) };
         let mut map: BTreeMap<RawFd, RawFd> = BTreeMap::new();
         map.insert(0 as RawFd, slave);
         map.insert(1 as RawFd, slave);
