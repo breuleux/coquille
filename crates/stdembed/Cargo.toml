@@ -2,6 +2,7 @@
 name = "stdembed"
 version.workspace = true
 edition = "2021"
+license.workspace = true
 description = "Test harness for the +ssh fd-multiplexing protocol"
 
 [dependencies]
